@@ -9,8 +9,8 @@ import sys                  #import system package
 
 # Globals
 gpgga_info = "$GPGGA,"
-SERIAL_DEVICE = "/dev/tty.usbserial-140"
-# SERIAL_DEVICE = "/dev/ttyUSB0"
+# SERIAL_DEVICE = "/dev/tty.usbserial-140"
+SERIAL_DEVICE = "/dev/ttyUSB0"
 BAUD_RATE = 57600
 ser = serial.Serial(SERIAL_DEVICE, BAUD_RATE)
 GPGGA_buffer = 0
@@ -33,8 +33,11 @@ def GPS_Info():
     print("NMEA Time: ", nmea_time,'\n')
     print ("NMEA Latitude:", nmea_latitude,"NMEA Longitude:", nmea_longitude,'\n')
     
-    lat = float(nmea_latitude)                  #convert string into float for calculation
-    longi = float(nmea_longitude)               #convertr string into float for calculation
+    if nmea_latitude and nmea_longitude:
+	    lat = float(nmea_latitude)                  #convert string into float for calculation
+	    longi = float(nmea_longitude)               #convertr string into float for calculation
+    else:
+        print("NMEA lat/long empty")
     
     lat_in_degrees = convert_to_degrees(lat)    #get latitude in degree decimal format
     long_in_degrees = convert_to_degrees(longi) #get longitude in degree decimal format
@@ -68,5 +71,5 @@ if __name__ == "__main__":
                 print("------------------------------------------------------------\n")
                             
     except KeyboardInterrupt:
-        webbrowser.open(map_link)        #open current position information in google map
+#         webbrowser.open(map_link)        #open current position information in google map
         sys.exit(0)
