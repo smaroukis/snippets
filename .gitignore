@@ -1,9 +1,15 @@
-.vscode
 .DS_Store
 
-00-C/*/main.dSYM/*
-00-C/integer-promotion-1/main
-00-C/hello-world-vscode/main
-00-C/integer-promotion-1/integer-promotion-1
-00-C/integer-promotion-1/integer-promotion-1.dSYM/Contents/Info.plist
-00-C/integer-promotion-1/integer-promotion-1.dSYM/Contents/Resources/DWARF/integer-promotion-1
+**/ignore/**
+00-C/**/main.dSYM/**
+00-C/.newProj.sh.swp
+
+# Ignore GCC outputs
+00-C/**/*.o
+00-C/**/*.a
+00-C/**/*.so
+00-C/**/*.exe
+# Ignore files without an extension 
+*
+!*/
+!*.
