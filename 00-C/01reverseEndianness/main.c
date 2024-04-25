@@ -7,10 +7,10 @@ typedef uint32_t (*generalTestFunct)(uint32_t); // change return type and argume
 uint32_t reverseEndianness(uint32_t x)
 {
     uint32_t tmp = 0;
-    tmp = ((x & 0xFF) << 3*8);
-    tmp |= (x & 0xFF00) << 1*8;
-    tmp |= (x & 0xFF0000) >> 1*8;
-    tmp |= (x & 0xFF000000) >> 3*8;
+    return ((x & 0x000000FF) << 3*8) |  
+            ((x & 0x0000FF00) << 1*8) | 
+            ((x & 0x00FF0000) >> 1*8) | 
+            ((x & 0xFF000000) >> 3*8);
     return tmp; 
 }
 
