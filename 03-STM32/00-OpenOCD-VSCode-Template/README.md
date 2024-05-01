@@ -3,6 +3,7 @@
 
 For a different target update the:
 - linker script for specific board e.g. `STM32F303RETX_FLASH.ld` 
+- Debug settings via `.vscode/launch.json` e.g. open ocd target
 
 in `Makefile`:
 - `LDSCRIPT` variable (arg for arm-none-eabi-gcc with `-T` flag) 
