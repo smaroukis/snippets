@@ -1,0 +1,7 @@
+# Freaking DS_Stores why apple why
+*.DS_Store
+
+# Ignore Binaries, Object Files and Linker Scripts (should be built locally)
+**/build
+**.lst
+**.o 

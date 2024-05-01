@@ -1,0 +1,56 @@
+
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Make Flash",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "flash"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "GCC_PATH": "/opt/ST/STM32CubeCLT/GNU-tools-for-STM32/bin"
+                }
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "detail": "compiler: /opt/ST/STM32CubeCLT/GNU-tools-for-STM32/bin/arm-none-eabi-gcc"
+        },
+        {
+            "type": "cppbuild",
+            "label": "C/C++ Extension: arm-none-eabi-gcc build active file",
+            "command": "/opt/ST/STM32CubeCLT/GNU-tools-for-STM32/bin/arm-none-eabi-gcc",
+            "args": [
+                "-fdiagnostics-color=always",
+                "-g",
+                "${file}",
+                "-o",
+                "${fileDirname}/${fileBasenameNoExtension}"
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build",
+            "detail": "compiler: /opt/ST/STM32CubeCLT/GNU-tools-for-STM32/bin/arm-none-eabi-gcc"
+        },
+        {
+            "label": "Echo VSCode Variables",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "Workspace Folder: ${workspaceFolder}",
+                "FileDirName: ${fileDirname}"
+            ],
+            "problemMatcher": []
+        }
+    ]
+}

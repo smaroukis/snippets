@@ -11,3 +11,7 @@
 00-C/**/*.exe
 # Ignore files without an extension 
 **/main
+
+# Appends
+03-STM32/00-OpenOCD-VSCode-Template/.settings/language.settings.xml
+03-STM32/00-OpenOCD-VSCode-Template/.settings/org.eclipse.core.resources.prefs
