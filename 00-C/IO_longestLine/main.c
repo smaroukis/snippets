@@ -1,4 +1,4 @@
-// Source: Ritchie 1978
+// Source: Ritchie 1978 Sec. 1.9 Character Arrays p. 26
 
 // Learned
 // can't assign a char array to another char array i.e. `saved = currentLine`, instead 
