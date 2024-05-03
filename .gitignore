@@ -15,3 +15,6 @@
 # Appends
 03-STM32/00-OpenOCD-VSCode-Template/.settings/*
 03-STM32/00-OpenOCD-VSCode-Template/.vscode/browse*
+02-Arduino-ESP/Arduino-Mega/03-tm1637-counter/Lib/TM1637-master/examples/TM1637Test/TM1637Test.ino
+02-Arduino-ESP/Arduino-Mega/03-tm1637-counter/Lib/TM1637-master/docs/TM1637_ V2.4.pdf
+02-Arduino-ESP/Arduino-Mega/03-tm1637-counter/Lib/TM1637-master/docs/TM1637_V2.4_EN.pdf

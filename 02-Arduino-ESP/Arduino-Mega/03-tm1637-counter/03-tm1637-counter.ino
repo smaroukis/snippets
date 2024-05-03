@@ -1,5 +1,17 @@
+// 10,000 hour desktop counter using arduino mega and 2x tm1637 modules
+// Usage: plug in power to start the timer automatically, 
+// press push button to pause and save data into EEPROM
+// Loads stored time from EEPROM after reboot 
+// **user must save time manually by pausing the timer with the pushbutton before shutting down**
+
+// TODO - brownout detection and automatically save to EEPROM 
+// currently takes 3.3ms to perform EEPROM write, not sure if that's enough time to perform an analog read
+// and write before the MCU goes brown, 
+// probably look into a coin cell backup with timer for this
+
 #include <Arduino.h>
 #include <TM1637Display.h>
+#include <EEPROM.h>
 
 #define DEBUG_ENABLED 0
 
@@ -10,6 +22,7 @@
   #define debug_println(str) 
   #define debug_print(str) 
 #endif
+#define TEST_PIN 62
 
 // Module connection pins (Digital Pins)
 #define A_CLK 61 // A -Minutes & Seconds
@@ -21,44 +34,70 @@
 #define BUTTON_PRESSED 1
 #define DEBOUNCE_FALSE 0
 
-#define TEST_DELAY 500// tm1637 - The amount of time (in milliseconds) between tests
+#define TEST_DELAY 200// tm1637 - The amount of time (in milliseconds) between blinking tests
 
 // Global variables
+uint8_t stopwatch_on = 1;
 unsigned long SW_PREV_ms = 0; // stopwatch store current millis() time
 const long SW_INTERVAL_SECOND = 1000; // interval in ms
 // TODO load these from EEPROM
-unsigned long seconds = 45;
-unsigned long minutes = 59;
-unsigned long hours = 0;
+#define SIGNATURE_EEADDR 0
+#define EXPECTED_SIGNATURE 0x2A
+#define SW_EEADDR_BASE 4
+#define MINUTES_EEADDR 8
+#define HOURS_EEADDR 12
 
-const uint8_t SEG_DONE[] = {
-  SEG_B | SEG_C | SEG_D | SEG_E | SEG_G,          // d
-  SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F,  // O
-  SEG_C | SEG_E | SEG_G,                          // n
-  SEG_A | SEG_D | SEG_E | SEG_F | SEG_G           // E
-};
+typedef struct { // initialized to reset values, read from EEPROM at runtime
+  uint32_t seconds;
+  uint32_t minutes;
+  uint32_t hours;
+} SW_COUNTER_t;
+SW_COUNTER_t stopwatch = { 0, 0, 0}; // Initial values if EEPROM is not set
 
+uint8_t fill[] = { 0xff, 0xff, 0xff, 0xff };
+uint8_t blank[] = { 0x00, 0x00, 0x00, 0x00 };
 TM1637Display tm1637_minsec(A_CLK, A_DIO);
 TM1637Display tm1637_hour(B_CLK, B_DIO);
+
 // Function Decl
 int update_button();
 int second_has_passed();
 int count_dig_return_pos(int x, int y);
+void clear_eeprom();
+void init_eeprom_struct();
+void save_to_eeprom_struct();
+void read_eeprom_struct();
+void toggle_pin(int x);
+void display_blink2();
+void display_init_test2();
 
 //////////////////////////////////////////////////////////////
 
 void setup() {
+  #if DEBUG_ENABLED
+    Serial.begin(9600); Serial.println("Started Serial");
+    while (!Serial); // wait until Serial is ready
+    clear_eeprom();
+  #endif 
+
+  // Check and load from EEPROM
+  int signature = EEPROM.read(SIGNATURE_EEADDR);
+  if (signature != EXPECTED_SIGNATURE) {
+    init_eeprom_struct(); // will also write values to eeprom
+    debug_println("EEPROM uninitialized, initialized");
+  } else {
+    read_eeprom_struct();
+    debug_print("Loaded HH:MM:SS from EEPROM: "); debug_print(stopwatch.hours); debug_print(":"); debug_print(stopwatch.minutes); debug_print(":"); debug_println(stopwatch.seconds);
+  }
+
   // Setup button as input pullup
   pinMode(BUTTON_PIN, INPUT_PULLUP);
-  Serial.begin(9600);
+  pinMode(TEST_PIN, OUTPUT); 
 
-  // Read EEPROM stored time value on startup
-  Serial.println("Starting timer...");
+  debug_println("Starting timer...");
 
-  // Initialize Brightness and Test Displays by flashing 5 times:
-  init_test(&tm1637_minsec);
-  init_test(&tm1637_hour);
-
+  // Initialize Brightness and Test Displays 
+  display_init_test2(&tm1637_minsec, &tm1637_hour);
 }
 
 //////////////////////////////////////////////////////////////
@@ -67,32 +106,40 @@ void loop() {
   // Check for button press
   int buttonPress = update_button();
 
-  if (buttonPress) {
-    Serial.println("Button Press");
-    // Start/stop timer
+  if (buttonPress) { // Start/stop timer
+    debug_println("Button Press");
+    if (stopwatch_on) {
+      save_to_eeprom_struct(); 
+    } else {
+      second_has_passed(); // set timer currentMillis to zero to start again
+    }
+    stopwatch_on = !stopwatch_on;
+    display_blink2(&tm1637_minsec, &tm1637_hour, 1); update_stopwatch(); // hack to re-display digits
   }
 
-  if (second_has_passed()) {
-    seconds += 1;
-    if (seconds % 60 == 0) {
-      minutes += 1;
-      if (minutes % 60 == 0) {
-        hours += 1;
-        if (hours % 10000 == 0) {
-          // Mastery
+  if (stopwatch_on && second_has_passed()) {
+    
+    stopwatch.seconds += 1;
+    if (stopwatch.seconds % 60 == 0) {
+      stopwatch.minutes += 1;
+      if (stopwatch.minutes % 60 == 0) {
+        stopwatch.hours += 1;
+       if (stopwatch.hours % 10000 == 0) {
+          tm1637_minsec.clear();
+          while(1) {
+            tm1637_minsec.setSegments(blank);
+            tm1637_hour.setSegments(blank);
+            delay(TEST_DELAY);
+            tm1637_minsec.setSegments(fill);
+            tm1637_hour.setSegments(fill);
+            delay(TEST_DELAY);
+          }
         }
       }
     }
-    Serial.println(seconds);
+    debug_println(stopwatch.seconds);
     update_stopwatch();
   }
-
-  // update clock every 1s
-
-  // analog read voltage for power shutoff
-
-  // if analog read < THRESH, store EEPROM
-
 }
 
 // Calculate if second has passed
@@ -103,7 +150,6 @@ int second_has_passed() {
     SW_PREV_ms = now;
     return true;
   }
-
   return false;
 }
 
@@ -118,7 +164,6 @@ int update_button() {
 
   // Reset/Start debounce timer if state change
   if (!flagDebouncing && buttonState != lastButtonState) {
-    debug_println("Started debounce timer");
     // start debounce timer
     lastDebounceTime = millis();
     flagDebouncing = 1;
@@ -126,8 +171,6 @@ int update_button() {
 
   // Debounce timer finished, accept current button state
   if ( flagDebouncing && (millis() - lastDebounceTime > debounceDelay)) {
-    debug_println("Timer finished");
-    debug_print("Button state (accepted): "); debug_println(buttonState);
     // Remove thiese
     // lastDebounceTime += millis();
     flagDebouncing = 0;
@@ -154,7 +197,28 @@ int update_button() {
   return DEBOUNCE_FALSE;
 }
 
+/*
+**************** EEPROM Functions *****************************
+*/
+void clear_eeprom() {
+    SW_COUNTER_t emptyStruct = { 0, 0, 0};
+    EEPROM.put(SIGNATURE_EEADDR, 0); // to use custom initial values
+    EEPROM.put(SW_EEADDR_BASE, emptyStruct);
+}
 
+void init_eeprom_struct() {
+  save_to_eeprom_struct();
+  EEPROM.put(SIGNATURE_EEADDR, EXPECTED_SIGNATURE);
+}
+
+void read_eeprom_struct() {
+  EEPROM.get(SW_EEADDR_BASE, stopwatch); // read struct from start address
+}
+
+void save_to_eeprom_struct() {
+  // benchmarking: 3.49 ms for (3) x .put commands
+  EEPROM.put(SW_EEADDR_BASE, stopwatch);
+}
 /*
 **************** TM1637 and Clock Functions *****************************
 */
@@ -162,15 +226,15 @@ int update_button() {
 // Uses global variables to update clock display
 void update_stopwatch() {
   // Update Minutes and Seconds Display
-  tm1637_minsec.showNumberDecEx(seconds % 60, 0, true, 2, 2);
-  tm1637_minsec.showNumberDecEx(minutes % 60, 1 << 6, true, 2, 0);
+  tm1637_minsec.showNumberDecEx(stopwatch.seconds % 60, 0, true, 2, 2);
+  tm1637_minsec.showNumberDecEx(stopwatch.minutes % 60, 1 << 6, true, 2, 0);
 
   // Update Hours Display
   // leave leading blanks, "1"hr starts at pos 3, "10"hr at pos 2, etc.
-  if (hours) {
-    int pos = count_dig_return_pos(hours, 3);
+  if (stopwatch.hours) {
+    int pos = count_dig_return_pos(stopwatch.hours, 3);
     int len = 3 - pos + 1;
-    tm1637_hour.showNumberDec(hours, false, len, pos);
+    tm1637_hour.showNumberDec(stopwatch.hours, false, len, pos);
   }
 }
 
@@ -186,124 +250,34 @@ int count_dig_return_pos(int num, int startPos)
     return i;
 }
 
-void init_test(TM1637Display* pDisplay) {
-  uint8_t data[] = { 0xff, 0xff, 0xff, 0xff };
-  uint8_t blank[] = { 0x00, 0x00, 0x00, 0x00 };
-  pDisplay->setBrightness(0x0f);
-
+/*
+**************** TM1637 Display Functions *****************************
+*/
+void display_init_test2(TM1637Display* pDisplay1, TM1637Display* pDisplay2) {
+  pDisplay1->setBrightness(0x0f);
+  pDisplay2->setBrightness(0x0f);
+  display_blink2(pDisplay1,pDisplay2, 4);
   // On/Off test
-  for (int k = 0; k < 4; k++) {
-    pDisplay->setSegments(data);
+}
+  
+void display_blink2(TM1637Display* pDisplay1, TM1637Display* pDisplay2, int blinks){
+  for (int k = 0; k < blinks; k++) {
+    pDisplay1->setSegments(blank);
+    pDisplay2->setSegments(blank);
     delay(TEST_DELAY);
-    pDisplay->setSegments(blank);
+    pDisplay2->setSegments(fill);
+    pDisplay1->setSegments(fill);
     delay(TEST_DELAY);
   }
+  // Leave blank for next write
+  pDisplay1->setSegments(blank);
+  pDisplay2->setSegments(blank);
 }
 
-void test(TM1637Display* pDisplay) {
-  TM1637Display display = *pDisplay;
-  display = *pDisplay;
-  int k;
-  uint8_t data[] = { 0xff, 0xff, 0xff, 0xff };
-  uint8_t blank[] = { 0x00, 0x00, 0x00, 0x00 };
-  display.setBrightness(0x0f);
-
-  // All segments on
-  display.setSegments(data);
-  delay(TEST_DELAY);
-
-  // Selectively set different digits
-  data[0] = display.encodeDigit(0);
-  data[1] = display.encodeDigit(1);
-  data[2] = display.encodeDigit(2);
-  data[3] = display.encodeDigit(3);
-  display.setSegments(data);
-  delay(TEST_DELAY);
-
-  /*
-  for(k = 3; k >= 0; k--) {
-	display.setSegments(data, 1, k);
-	delay(TEST_DELAY);
-	}
-  */
-
-  display.clear();
-  display.setSegments(data + 2, 2, 2);
-  delay(TEST_DELAY);
-
-  display.clear();
-  display.setSegments(data + 2, 2, 1);
-  delay(TEST_DELAY);
-
-  display.clear();
-  display.setSegments(data + 1, 3, 1);
-  delay(TEST_DELAY);
-
-
-  // Show decimal numbers with/without leading zeros
-  display.showNumberDec(0, false);  // Expect: ___0
-  delay(TEST_DELAY);
-  display.showNumberDec(0, true);  // Expect: 0000
-  delay(TEST_DELAY);
-  display.showNumberDec(1, false);  // Expect: ___1
-  delay(TEST_DELAY);
-  display.showNumberDec(1, true);  // Expect: 0001
-  delay(TEST_DELAY);
-  display.showNumberDec(301, false);  // Expect: _301
-  delay(TEST_DELAY);
-  display.showNumberDec(301, true);  // Expect: 0301
-  delay(TEST_DELAY);
-  display.clear();
-  display.showNumberDec(14, false, 2, 1);  // Expect: _14_
-  delay(TEST_DELAY);
-  display.clear();
-  display.showNumberDec(4, true, 2, 2);  // Expect: __04
-  delay(TEST_DELAY);
-  display.showNumberDec(-1, false);  // Expect: __-1
-  delay(TEST_DELAY);
-  display.showNumberDec(-12);  // Expect: _-12
-  delay(TEST_DELAY);
-  display.showNumberDec(-999);  // Expect: -999
-  delay(TEST_DELAY);
-  display.clear();
-  display.showNumberDec(-5, false, 3, 0);  // Expect: _-5_
-  delay(TEST_DELAY);
-  display.showNumberHexEx(0xf1af);  // Expect: f1Af
-  delay(TEST_DELAY);
-  display.showNumberHexEx(0x2c);  // Expect: __2C
-  delay(TEST_DELAY);
-  display.showNumberHexEx(0xd1, 0, true);  // Expect: 00d1
-  delay(TEST_DELAY);
-  display.clear();
-  display.showNumberHexEx(0xd1, 0, true, 2);  // Expect: d1__
-  delay(TEST_DELAY);
-
-  // Run through all the dots
-  for (k = 0; k <= 4; k++) {
-    display.showNumberDecEx(0, (0x80 >> k), true);
-    delay(TEST_DELAY);
-  }
-
-  // Brightness Test
-  for (k = 0; k < 4; k++)
-    data[k] = 0xff;
-  for (k = 0; k < 7; k++) {
-    display.setBrightness(k);
-    display.setSegments(data);
-    delay(TEST_DELAY);
-  }
-
-  // On/Off test
-  for (k = 0; k < 4; k++) {
-    display.setBrightness(7, false);  // Turn off
-    display.setSegments(data);
-    delay(TEST_DELAY);
-    display.setBrightness(7, true);  // Turn on
-    display.setSegments(data);
-    delay(TEST_DELAY);
-  }
-
-
-  // Done!
-  display.setSegments(SEG_DONE);
+/*
+**************** MISC / DEBUG *****************************
+*/
+// For scope use
+void toggle_pin(int PIN_NO){
+  digitalWrite(PIN_NO, !digitalRead(PIN_NO));
 }
