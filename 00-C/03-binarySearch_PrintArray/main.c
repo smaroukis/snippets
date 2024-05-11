@@ -28,24 +28,24 @@ int BinarySearch(int x, int arr[], int len)
     int high = len - 1; // start at the last element
     int low = 0;
     int i;
-    
-    while( low <= high ) { 
-        // Exit condition: For a one element array, L=H=i, if x>arr[i] then L=i+1 which is greater than H, so we exit
-        i = (high + low ) / 2; // Key point: the middle index is the "average"
 
-        if (x > arr[i]) { 
+    // Take the last case of low = high, then 
+    while (low <= high) {
+        // midpoint is average
+        i = (high + low) / 2;
+        if (x > arr[i]) {
             low = i + 1;
         }
         else if (x < arr[i]) {
             high = i - 1;
         }
-        else { 
-            // match
+        else {
+            // match found
             printf("Found %d in ", x);
             printArr(arr, len);
             return i;
         }
-    } 
+    }
 
     printf("Did not find %d in ", x);
     printArr(arr, len);
@@ -99,6 +99,7 @@ int main(void) {
     generalTestFunct test_func = &BinarySearch;
     
     // test printarray
+    printf("Testing printArray()\n"); 
     int arr[] = {1, 2, 3};
     printArr(arr, sizeof(arr)/sizeof(arr[0]));
     
@@ -112,6 +113,11 @@ int main(void) {
     x = 6;
     int arr3[] = {1, 2, 3};
     test_func(x, arr3, sizeof(arr3)/sizeof(arr3[0]) );
+
+    x = -5;
+    int arr4[] = {-5, 0, 2, 5};
+    test_func(x, arr4, sizeof(arr4)/sizeof(arr4[0]) );
+
     
     // test 3:
     

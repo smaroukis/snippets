@@ -1,0 +1,65 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cppbuild",
+			"label": "C/C++: gcc build active file",
+			"command": "/usr/bin/gcc",
+			"args": [
+				"-fdiagnostics-color=always",
+				"-g",
+				"${file}",
+				"-o",
+				"${fileDirname}/${fileBasenameNoExtension}"
+			],
+			"options": {
+				"cwd": "${fileDirname}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"detail": "compiler: /usr/bin/gcc"
+		}, 
+		{
+            "label": "Build and Run",
+            "type": "shell",
+            "command": "/opt/homebrew/bin/bash",
+            "args": [
+                "-c",
+                "gcc -fdiagnostics-color=always -g ${file} -o ${fileDirname}/${fileBasenameNoExtension} && ${fileDirname}/${fileBasenameNoExtension}"
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Compiles the current file and runs the resulting executable."
+        }
+	]
+}
+
+// type: Identifies the task type. Here, it's specified as cppbuild, which is commonly used for C/C++ build tasks.
+// label: A human-readable string that appears in the command palette. This label is "C/C++: gcc build active file", suggesting that the task compiles the currently active file in VS Code.
+// command: Specifies the path to the compiler (gcc) used to build the file. Here, it's /usr/bin/gcc.
+// args: These are the command line arguments passed to gcc:
+// 	-fdiagnostics-color=always: Forces the compiler to use colored output for errors and warnings.
+// 	-g: Includes debugging information in the compiled output, which helps with debugging.
+// 	${file}: This is a variable that represents the path of the currently active file in VS Code.
+// 	-o: Specifies the output file name.
+// 	${fileDirname}/${fileBasenameNoExtension}: Sets the output file in the same directory as the source file but without an extension.
+// options: Specifies options for how the task is run:
+// 	cwd: "Current Working Directory" where the command is run. ${fileDirname} means the directory of the currently active file.
+// problemMatcher: Used to parse the compiler output for errors and warnings and integrate them into the editor. $gcc is a predefined problem matcher for GCC that captures common error and warning formats.
+// group: Defines how the task is categorized in the user interface:
+// 	kind: This is a "build" task, meant to compile or prepare your project.
+// 	isDefault: When set to true, this task will run when you execute the "Run Build Task" command without specifying a particular task.
+// detail: Additional information about the task, here noting the specific compiler used (/usr/bin/gcc).
