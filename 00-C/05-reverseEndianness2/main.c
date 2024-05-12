@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdint.h>
 
+/*
+* @brief swaps endianness of 16 bit input data in place using temp variable
+*/
 void reverseEndianness16(uint16_t* data)
 {
     // use temp variable and pointer
@@ -10,6 +13,10 @@ void reverseEndianness16(uint16_t* data)
     pDataByte[1] = tmp;
 }
 
+/*
+* @brief swaps endianness of 8 bit data in place using a loop
+* @note we can extend this for any length of data input
+*/
 void reverseEndianness(uint8_t* start, int len) {
 
     for (int i=0, k=len-1; i<=k; i++, k--) {
@@ -19,6 +26,9 @@ void reverseEndianness(uint8_t* start, int len) {
     }
 }
 
+/*
+* @brief swaps endianness of 32 bit data type using bitwise operators
+*/
 uint32_t reverseEndianBitwise(uint32_t data){
     // swap first and last 16 bits
     data = ((data & 0xffff0000) >> 16 | (data & 0x0000ffff) << 16);
@@ -27,6 +37,9 @@ uint32_t reverseEndianBitwise(uint32_t data){
     return data;
 }
 
+/*
+* @brief swaps endianness in place for input data of any size with a loop 
+*/
 void reverseEndian3(void* data, size_t len) {
     uint8_t* start = (uint8_t*)data;
     uint8_t* end = start + len - 1;

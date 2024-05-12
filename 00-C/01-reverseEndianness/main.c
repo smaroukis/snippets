@@ -4,6 +4,8 @@
 
 typedef uint32_t (*generalTestFunct)(uint32_t); // change return type and arguments as nec.
 
+// Return 32bit endianness-reversed version of input x
+// Only works for 32 bit values
 uint32_t reverseEndianness(uint32_t x)
 {
     uint32_t tmp = 0;
