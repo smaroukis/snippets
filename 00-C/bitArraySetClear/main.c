@@ -38,12 +38,13 @@ int main(void) {
     // Check
     int count = 0;
     for (i = 0; i < 32*ARR_SIZE; i++) {
-        if (CHECKBIT(arr, i))
+        if (CHECKBIT(arr, i)) {
             printf("Bit %d was set\n", i);
             count++;
+        }
     }
     
-    count ? printf("No bits set\n") : 0;
+    count == 0 ? printf("No bits set\n") : 0;
 
     return 0;
 }
